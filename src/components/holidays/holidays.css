@@ -1,0 +1,106 @@
+.modal-footer-holiday {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  text-align: right;
+}
+
+/* styling calendar */
+.custom-calendar {
+  transform: scale(0.85);
+  margin-top: -9px;
+  margin-left: 20%;
+  position: absolute;
+  top: 35px;
+  z-index: 999;
+}
+
+.react-calendar {
+  margin-top: 2px;
+  margin-left: -8px;
+  width: 253px !important;
+  min-width: 253px !important;
+  height: 225px !important;
+  background-color: #fff;
+  color: #222;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  line-height: 0.425rem;
+}
+
+.react-calendar__month-view__days {
+  width: 253px !important;
+}
+
+.react-calendar__month-view__weekdays {
+  width: 253px !important;
+}
+
+.react-calendar__navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: -4px;
+}
+
+.react-calendar__navigation button {
+  font-size: 12px;
+  padding: 0px;
+  margin-left: -3px;
+}
+/* styling calendar dates */
+.react-calendar__tile {
+  padding: 0px;
+  height: 28px;
+  line-height: 0.6rem;
+}
+
+/* Styling the month and year tiles */
+.react-calendar__year-view__months,
+.react-calendar__decade-view__years,
+.react-calendar__century-view__decades {
+  display: grid !important;
+  grid-template-columns: 20% 20% 20% 20% 20%;
+
+  &.react-calendar__year-view__months {
+    grid-template-columns: 33.3% 33.3% 33.3%;
+  }
+
+  .react-calendar__tile {
+    max-width: initial !important;
+    font-size: 15px;
+    padding: 8px;
+  }
+}
+
+.page-link,
+.page-link:active,
+.page-link:focus {
+  box-shadow: none !important;
+}
+
+.holiday-tile {
+  background-color: rgb(248, 226, 59);
+}
+
+/* Styling toast */
+.custom-toast {
+  font-size: 12px !important;
+}
+.Toastify__toast,
+.Toastify__toast-theme--light,
+.Toastify__toast--success,
+.Toastify__toast--close-on-click {
+  height: 30px !important;
+  margin: 0px !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+.Toastify__toast-body {
+  margin: 0px !important;
+  padding: 0px !important;
+  min-width: 200px !important;
+}
