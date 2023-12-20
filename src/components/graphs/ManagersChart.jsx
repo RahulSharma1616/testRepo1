@@ -1,124 +1,127 @@
-// Import necessary libraries 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import axios from "axios";
 import ReactApexChart from "react-apexcharts";
-
-function ManagersChart() {
+import { useQuery } from "@tanstack/react-query";
   
   //Set the baseURL
   const baseURL = process.env.NODE_ENV === 'production' ? 'https://3.108.23.98/API' : 'http://localhost:4000';
 
-  const [options, setOptions] = useState({
-    // render loading... text
-    noData: {
-      text: "Loading...",
-      align: "center",
-      verticalAlign: "middle",
-      offsetY: 0,
-      offsetX: 0,
-      style: {
-        color: "green",
-        fontSize: "16px",
-      },
-    },
-    chart: {
-      type: "bar",
-      height: 350,
-    },
-    plotOptions: {
-      bar: {
-        horizontal: true,
-      },
-    },
-    colors: ["#3c7bcf","#0cad9b"],
-    // styling x-axis labels
-    xaxis: {
-      title: {
-        text: "Hours",
-        style: {
-          fontSize: "20px",
-          fontWeight: 500,
-          fontFamily:
-            'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
-        },
-      },
-    },
-    // styling y-axis labels
-    yaxis: {
-      title: {
-        text: "Managers",
-        style: {
-          fontSize: "20px",
-          fontWeight: 500,
-          fontFamily:
-            'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
-        },
-      },
-      categories: [], // Initialize with an empty array
-    },
+const fetchManagersChartData = async () => {
+  const response = await axios.get(
+    baseURL + `/analytics/getDataOfManagers`
+  );
+  return response.data.managersData;
+};
+
+function ManagersChart({ isProfileModalOpen }) {
+  const { data, error, status } = useQuery({
+    queryKey: ["managersChartData"],
+    queryFn: fetchManagersChartData,
   });
 
-  const [data, setData] = useState([
-    {
-      name: "Actual Hours",
-      data: [],
-    },
-    {
-      name: "Expected Hours",
-      data: [],
-    },
-  ]);
+  const chartData = React.useMemo(() => {
+    if (status === "loading") {
+      return {
+        categories: [],
+        actualHours: [],
+        expectedHours: [],
+      };
+    }
 
-  // render data from api
-  useEffect(() => {
-    axios
-      .get(baseURL + "/analytics/getDataOfManagers") 
-      .then((response) => {
-        const managersData = response.data.managersData;
+    if (status === "error") {
+      console.error("Error fetching data: ", error);
+      return {
+        categories: [],
+        actualHours: [],
+        expectedHours: [],
+      };
+    }
 
-        const managerNames = [];
-        const expectedHours = [];
-        const actualHours = [];
+    const managerNames = [];
+    const actualHours = [];
+    const expectedHours = [];
 
-        for (const key in managersData) {
-          const data = managersData[key];
-          managerNames.push(data.manager);
-          actualHours.push(data.hours);
-          expectedHours.push(data.expectedHours);
-        }
+    for (const key in data) {
+      const managerData = data[key];
+      managerNames.push(managerData.manager);
+      actualHours.push(managerData.hours);
+      expectedHours.push(managerData.expectedHours);
+    }
 
-        setOptions((prevOptions) => ({
-          ...prevOptions,
-          yaxis: {
-            ...prevOptions.yaxis,
+    return {
+      categories: managerNames,
+      actualHours: actualHours,
+      expectedHours: expectedHours,
+    };
+  }, [data, error]);
+
+  const options = React.useMemo(
+    () => ({
+      noData: {
+        text: "Loading...",
+        align: "center",
+        verticalAlign: "middle",
+        offsetY: 0,
+        offsetX: 0,
+        style: {
+          color: "green",
+          fontSize: "16px",
+        },
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true,
+        },
+      },
+      colors: ["#3c7bcf", "#0cad9b"],
+      xaxis: {
+        title: {
+          text: "Hours",
+          style: {
+            fontSize: "20px",
+            fontWeight: 500,
+            fontFamily:
+              'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
           },
-          xaxis: {
-            categories: managerNames,
+        },
+        categories: chartData.categories,
+      },
+      yaxis: {
+        title: {
+          text: "Managers",
+          style: {
+            fontSize: "20px",
+            fontWeight: 500,
+            fontFamily:
+              'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
           },
-        }));
-
-        setData([
-          {
-            name: "Actual Hours",
-            data: actualHours,
-          },
-          {
-            name: "Expected Hours",
-            data: expectedHours,
-          },
-        ]);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, []);
+        },
+      },
+      chart: {
+        type: "bar",
+        height: 350,
+        toolbar: {
+          show: !isProfileModalOpen,
+        },
+      },
+    }),
+    [chartData]
+  );
 
   return (
     <div className="horizontal-bar-chart">
-    {/* display the chart */}
       <ReactApexChart
         options={options}
-        series={data}
+        series={[
+          {
+            name: "Actual Hours",
+            data: chartData.actualHours,
+          },
+          {
+            name: "Expected Hours",
+            data: chartData.expectedHours,
+          },
+        ]}
         type="bar"
         height={350}
         width={510}

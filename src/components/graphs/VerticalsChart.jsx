@@ -1,27 +1,50 @@
-// Import necessary libraries 
-import React, { useEffect, useState } from "react";
+import React, { useMemo} from "react";
 import axios from "axios";
 import ReactApexChart from "react-apexcharts";
-
-function VerticalHoursChart() {
-  const [data, setData] = useState({});
+import { useQuery } from "@tanstack/react-query";
   
   //Set the baseURL
   const baseURL = process.env.NODE_ENV === 'production' ? 'https://3.108.23.98/API' : 'http://localhost:4000';
 
-  // api call to get data
-  useEffect(() => {
-    axios
-      .get(baseURL + "/analytics/getDataforPlotting")
-      .then((response) => {
-        setData(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-      });
-  }, []);
+const fetchVerticalChartData = async () => {
+  try {
+    const response = await axios.get(
+      baseURL + `/analytics/getDataforPlotting`
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error("Error fetching vertical chart data");
+  }
+};
 
-  const getChartData = () => {
+function VerticalHoursChart({ isProfileModalOpen }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["verticalChartData"],
+    queryFn: fetchVerticalChartData,
+  });
+
+  const chartData = useMemo(() => {
+    //send empty data when fetching
+    if (isLoading) {
+      return {
+        categories: [],
+        billedHours: [],
+        nonBilledHours: [],
+        expectedHours: [],
+      };
+    }
+
+    //send error message if error present
+    if (error) {
+      console.error("Error fetching data: ", error);
+      return {
+        categories: [],
+        billedHours: [],
+        nonBilledHours: [],
+        expectedHours: [],
+      };
+    }
+
     // logic to format the fetched data to render on the screen
     const categories = Object.keys(data);
     const billedHours = [];
@@ -34,11 +57,7 @@ function VerticalHoursChart() {
       expectedHours.push(data[category].expectedHours);
     }
 
-    const originalLabels = categories;
-
-    const modifiedLabels = originalLabels.map((label) => {
-      return label.split(" ");
-    });
+    const modifiedLabels = categories.map((label) => label.split(" "));
 
     return {
       categories: modifiedLabels,
@@ -46,9 +65,7 @@ function VerticalHoursChart() {
       nonBilledHours: nonBilledHours,
       expectedHours: expectedHours,
     };
-  };
-
-  const chartData = getChartData();
+  });
 
   const options = {
     // format rendered chart styles
@@ -67,6 +84,9 @@ function VerticalHoursChart() {
       type: "bar",
       height: 350,
       stacked: true,
+      toolbar: {
+        show: !isProfileModalOpen,
+      },
     },
     stroke: {
       width: 0,
@@ -102,7 +122,7 @@ function VerticalHoursChart() {
       },
     },
 
-    colors: ["#1ad6a1", "#0cad9b","#3c7bcf"],
+    colors: ["#1ad6a1", "#0cad9b", "#3c7bcf"],
     yaxis: {
       title: {
         text: "Hours",

@@ -1,16 +1,51 @@
-// Import necessary libraries 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import axios from "axios";
 import ReactApexChart from "react-apexcharts";
-
-function ProjectChart() {
+import { useQuery } from "@tanstack/react-query";
   
   //Set the baseURL
   const baseURL = process.env.NODE_ENV === 'production' ? 'https://3.108.23.98/API' : 'http://localhost:4000';
 
-  const [data, setData] = useState([]);
-  const [options, setOptions] = useState({
-    // style the chart labels and titles
+const fetchData = async () => {
+  try {
+    const response = await axios.get(baseURL + `/analytics/getDataOfProjects`);
+    return response.data.projectArray;
+  } catch (error) {
+    throw new Error("Error fetching project data");
+  }
+};
+
+function ProjectChart({ isProfileModalOpen }) {
+  const { data, error, status } = useQuery({ queryKey: ["projectData"], queryFn: fetchData});
+
+  const chartData = React.useMemo(() => {
+
+    if(error) {
+      console.error("Error fetchng data:", error.message);
+      return [];
+    }
+
+    if (!data) return [];
+    const projectNames = [];
+    const projectHours = [];
+    const expectedHours = [];
+
+    for (const key in data) {
+      const project = data[key];
+      if (!project.projectName.toLowerCase().includes("holiday")) {
+        projectNames.push(project.projectName.split(" "));
+        projectHours.push(project.hours);
+        expectedHours.push(project.expectedHours);
+      }
+    }
+
+    return [
+      { name: "Actual Hours", data: projectHours },
+      { name: "Expected Hours", data: expectedHours },
+    ];
+  }, [data,error]);
+
+  const chartOptions = React.useMemo(() => ({
     noData: {
       text: "Loading...",
       align: "center",
@@ -24,12 +59,15 @@ function ProjectChart() {
     },
     chart: {
       id: "project-chart",
+      toolbar: {
+        show: !isProfileModalOpen,
+      },
     },
     xaxis: {
       labels: {
         rotate: 0,
       },
-      categories: [],
+      categories: chartData.map(({ name }) => name),
       title: {
         text: "Projects",
         style: {
@@ -58,47 +96,27 @@ function ProjectChart() {
       },
     },
     colors: ["#3c7bcf", "#0cad9b"],
-  });
+    toolbar: {
+      show: false,
+      tools: {
+        selection: false,
+      },
+    },
+  }), [chartData]);
 
-  useEffect(() => {
-    // Make an Axios call to get project data
-    axios
-      .get(baseURL + "/analytics/getDataOfProjects") 
-      .then((response) => {
-        const projectArray = response.data.projectArray;
-        const projectNames = [];
-        const projectHours = [];
-        const expectedHours = [];
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
 
-        for (const key in projectArray) {
-          const project = projectArray[key];
-          if (project.projectName.toLowerCase().includes("holiday")) {
-          } else {
-            projectNames.push(project.projectName.split(" "));
-            projectHours.push(project.hours);
-            expectedHours.push(project.expectedHours);
-          }
-        }
-
-        setData([
-          { name: "Actual Hours", data: projectHours },
-          { name: "Expected Hours", data: expectedHours },
-        ]);
-        setOptions({
-          ...options,
-          xaxis: { categories: projectNames },
-        });
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, []);
+  if (status === "error") {
+    return <div>Error fetching data</div>;
+  }
 
   return (
     <div className="project-chart">
       <ReactApexChart
-        options={options}
-        series={data}
+        options={chartOptions}
+        series={chartData}
         type="bar"
         height={350}
         width={820}

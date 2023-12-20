@@ -1,7 +1,6 @@
 // Import necessary libraries 
 import axios from 'axios';
-import React, { useEffect, useRef, useState } from 'react';
-import Chart from 'chart.js/auto';
+import React, { useEffect, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { useCookies } from 'react-cookie';
 
